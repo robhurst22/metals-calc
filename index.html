@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Metals Price Check</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1c20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Metals">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{
+  --bg:#1b1c20; --card:#25272c; --card2:#2d3036; --line:#3a3d44; --text:#f1f2f4; --muted:#9aa0aa;
+  --blue:#4169e1; --green:#4caf50; --amber:#e8a93a; --red:#ef6b6b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.app{max-width:520px;margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-size:14px;font-weight:600;background:rgba(76,175,80,.14);color:var(--green);min-width:0}
+.chip .d{width:10px;height:10px;border-radius:50%;background:currentColor;flex:none}
+.chip.stale,.chip.manual{background:rgba(232,169,58,.14);color:var(--amber)}
+.chip.none{background:rgba(239,107,107,.14);color:var(--red)}
+.chip span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link{background:none;border:0;color:#5b82ff;font-weight:600;font-size:15px;font-family:inherit;display:inline-flex;align-items:center;gap:6px;padding:8px 0 8px 8px;cursor:pointer;flex:none}
+.link svg{width:18px;height:18px}
+.link.busy svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.spot{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 10px;text-align:center}
+.spot.on{border-color:#56595f}
+.spot label{display:block;font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:6px}
+.spot input{width:100%;background:transparent;border:0;color:var(--text);font-weight:700;font-size:26px;font-family:inherit;text-align:center;outline:none;padding:2px 0;border-radius:8px}
+.spot input:focus{background:var(--card2)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card2);border-radius:999px;padding:4px;margin-bottom:16px;border:1px solid var(--line)}
+.tabs button{border:0;background:transparent;color:var(--muted);font-weight:600;font-size:17px;font-family:inherit;padding:12px;border-radius:999px;cursor:pointer}
+.tabs button.on{background:var(--bg);color:var(--text);box-shadow:0 0 0 1px var(--line) inset}
+.slots{display:flex;flex-direction:column;gap:18px;margin-top:22px}
+.slot{position:relative;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:16px}
+.slot.best{border-color:var(--green);background:#262b2c}
+.badge{display:none;position:absolute;top:-15px;right:22px;background:var(--green);color:#0d1f0e;font-weight:700;font-size:13px;letter-spacing:.06em;padding:6px 12px;border-radius:999px;align-items:center;gap:6px}
+.badge svg{width:16px;height:16px}
+.slot.best .badge{display:inline-flex}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.name{display:flex;align-items:center;gap:10px;font-weight:600;font-size:19px}
+.dot{width:12px;height:12px;border-radius:50%}
+.del{background:none;border:0;color:var(--muted);padding:6px;cursor:pointer;border-radius:8px}
+.del svg{width:24px;height:24px;display:block}
+.del[hidden]{display:none}
+.inputs{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-bottom:12px}
+select,.price{background:var(--bg);border:1px solid var(--line);border-radius:16px;color:var(--text);font-size:17px;font-family:inherit;min-width:0}
+select{padding:14px 10px;width:100%}
+.price{display:flex;align-items:center;padding:0 12px}
+.price span{color:var(--muted);margin-right:4px}
+.price input{width:100%;background:transparent;border:0;outline:none;color:var(--text);font-size:17px;font-family:inherit;padding:14px 0}
+.price:focus-within,select:focus{border-color:#5b82ff}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--card2);border-radius:16px;padding:14px}
+.res .k{font-size:13px;color:var(--muted);margin-bottom:2px}
+.res .v{font-size:20px;font-weight:700}
+.res .v.neg{color:var(--green)}
+.foot{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+.btn{border:0;border-radius:999px;padding:16px;font-weight:600;font-size:16px;font-family:inherit;color:var(--text);background:var(--card2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.reset{color:var(--red)}
+.note{color:var(--muted);font-size:12px;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="chip none" id="chip"><i class="d"></i><span class="t" id="chipText">Loading spot…</span></div>
+    <button class="link" id="refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-15.5-6.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15.5 6.2L21 16"/><path d="M16 16h5v5"/></svg><span>Refresh Live Spot</span></button>
+  </div>
+  <div class="spots">
+    <div class="spot" id="spot-gold"><label for="in-gold">GOLD SPOT ($/OZ)</label><input id="in-gold" inputmode="decimal" autocomplete="off" placeholder="—"></div>
+    <div class="spot" id="spot-silver"><label for="in-silver">SILVER SPOT ($/OZ)</label><input id="in-silver" inputmode="decimal" autocomplete="off" placeholder="—"></div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button id="tab-gold" role="tab">Gold Analysis</button>
+    <button id="tab-silver" role="tab">Silver Analysis</button>
+  </div>
+  <div class="slots" id="slots"></div>
+  <div class="foot">
+    <button class="btn" id="add"></button>
+    <button class="btn reset" id="reset"></button>
+  </div>
+  <div class="note">Troy ounces. Spot is indicative, so dealer premiums may read a bit differently.</div>
+</div>
+<script>
+(function(){
+'use strict';
+var KEY='metals-calc-v1', MAXS=5, GOZ=31.1034768;
+var SIZES=[
+  {k:'1oz',label:'1 oz',oz:1},
+  {k:'50g',label:'50 g',oz:50/GOZ},
+  {k:'10oz',label:'10 oz',oz:10},
+  {k:'1kilo',label:'1 kilo',oz:1000/GOZ},
+  {k:'100oz',label:'100 oz',oz:100}
+];
+var SIZE={}; SIZES.forEach(function(s){SIZE[s.k]=s;});
+var DEFAULTS={gold:['1oz','50g'],silver:['10oz','1kilo','100oz']};
+var COLORS=['#4169e1','#4caf50','#e8a93a','#b36bd6','#e8689a'];
+var API={gold:'https://api.gold-api.com/price/XAU',silver:'https://api.gold-api.com/price/XAG'};
+var NAMES={gold:'Gold',silver:'Silver'};
+
+var state;
+function mkSlot(size){return {id:state.nextId++,size:size,price:''};}
+function defaults(metal){return DEFAULTS[metal].map(mkSlot);}
+function fresh(){
+  state={v:1,mode:'gold',nextId:1,spot:{gold:{price:'',ts:null,src:'none'},silver:{price:'',ts:null,src:'none'}},slots:{}};
+  state.slots.gold=defaults('gold'); state.slots.silver=defaults('silver');
+}
+function load(){
+  fresh();
+  try{
+    var raw=localStorage.getItem(KEY); if(!raw) return;
+    var s=JSON.parse(raw); if(!s||s.v!==1) return;
+    if(s.mode==='gold'||s.mode==='silver') state.mode=s.mode;
+    ['gold','silver'].forEach(function(m){
+      var sp=s.spot&&s.spot[m];
+      if(sp&&typeof sp.price==='string'){state.spot[m]={price:sp.price,ts:+sp.ts||null,src:(sp.src==='manual'?'manual':sp.price?'stale':'none')};}
+      var arr=s.slots&&s.slots[m];
+      if(Array.isArray(arr)&&arr.length>=1&&arr.length<=MAXS){
+        var ok=arr.every(function(x){return x&&SIZE[x.size]&&typeof x.price==='string';});
+        if(ok) state.slots[m]=arr.map(function(x){return {id:state.nextId++,size:x.size,price:x.price};});
+      }
+    });
+  }catch(e){}
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+function num(str){
+  if(str==null) return NaN;
+  var c=String(str).replace(/[^0-9.]/g,'');
+  if(!c) return NaN;
+  var n=parseFloat(c); return (isFinite(n)&&n>0)?n:NaN;
+}
+function clean(str){return String(str).replace(/[^0-9.]/g,'');}
+var usd=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
+function money(n){return (n<0?'-':'')+usd.format(Math.abs(n));}
+var dtf=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+function when(ts){return dtf.format(new Date(ts))+' ET';}
+
+var $=function(id){return document.getElementById(id);};
+var slotsEl=$('slots'), els={}, pendingSort=false;
+var ICON_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+var ICON_CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/></svg>';
+
+function cur(){return state.slots[state.mode];}
+
+function buildSlot(s){
+  var d=document.createElement('div'); d.className='slot'; d.dataset.id=s.id;
+  var opts=SIZES.map(function(z){return '<option value="'+z.k+'">'+z.label+' ('+(+z.oz.toFixed(4))+' oz)</option>';}).join('');
+  d.innerHTML='<span class="badge">'+ICON_CHECK+'BEST DEAL</span>'+
+    '<div class="head"><div class="name"><i class="dot"></i><span class="nm"></span></div><button class="del" aria-label="Delete slot">'+ICON_TRASH+'</button></div>'+
+    '<div class="inputs"><select aria-label="Size">'+opts+'</select>'+
+    '<label class="price"><span>$</span><input inputmode="decimal" autocomplete="off" placeholder="Price" aria-label="Price"></label></div>'+
+    '<div class="res"><div><div class="k">Price per Troy Oz</div><div class="v ppo">—</div></div>'+
+    '<div><div class="k">Premium Over Spot</div><div class="v prem">—</div></div></div>';
+  var sel=d.querySelector('select'), inp=d.querySelector('input');
+  sel.value=s.size; inp.value=s.price;
+  sel.addEventListener('change',function(){s.size=sel.value;save();update();requestSort(true);});
+  inp.addEventListener('input',function(){s.price=inp.value;save();update();pendingSort=true;});
+  inp.addEventListener('change',function(){inp.value=s.price=clean(inp.value);save();update();pendingSort=true;});
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter'){inp.blur();requestSort(true);}});
+  d.querySelector('.del').addEventListener('click',function(){
+    var a=cur(); if(a.length<=1) return;
+    state.slots[state.mode]=a.filter(function(x){return x!==s;});
+    save();render();
+  });
+  els[s.id]=d; return d;
+}
+
+function render(){
+  els={}; slotsEl.innerHTML='';
+  cur().forEach(function(s){slotsEl.appendChild(buildSlot(s));});
+  ['gold','silver'].forEach(function(m){
+    $('tab-'+m).classList.toggle('on',state.mode===m);
+    $('tab-'+m).setAttribute('aria-selected',state.mode===m);
+    $('spot-'+m).classList.toggle('on',state.mode===m);
+  });
+  var n=cur().length;
+  $('add').textContent='+ Add Slot ('+n+'/'+MAXS+')'; $('add').disabled=n>=MAXS;
+  $('reset').textContent='Reset '+NAMES[state.mode];
+  update();
+}
+
+function calc(s,spot){
+  var p=num(s.price); if(isNaN(p)) return null;
+  var ppo=p/SIZE[s.size].oz, r={ppo:ppo};
+  if(!isNaN(spot)){r.prem=ppo-spot; r.pct=r.prem/spot*100;}
+  return r;
+}
+function update(){
+  var spot=num(state.spot[state.mode].price);
+  var rows=cur().map(function(s,i){return {s:s,r:calc(s,spot),i:i};});
+  var valid=rows.filter(function(x){return x.r;});
+  var best=null;
+  if(valid.length>=2) best=valid.reduce(function(a,b){return b.r.ppo<a.r.ppo?b:a;});
+  rows.forEach(function(x,i){
+    var d=els[x.s.id]; if(!d) return;
+    d.querySelector('.nm').textContent='Slot '+(i+1);
+    d.querySelector('.dot').style.background=COLORS[i%COLORS.length];
+    d.querySelector('.name').style.color=COLORS[i%COLORS.length];
+    d.querySelector('.del').hidden=rows.length<=1;
+    d.classList.toggle('best',best===x);
+    var ppo=d.querySelector('.ppo'), pr=d.querySelector('.prem');
+    ppo.textContent=x.r?money(x.r.ppo):'—';
+    if(x.r&&x.r.prem!=null){
+      pr.textContent=money(x.r.prem)+' ('+(x.r.pct<0?'-':'')+Math.abs(x.r.pct).toFixed(1)+'%)';
+      pr.classList.toggle('neg',x.r.prem<0);
+    }else{pr.textContent='—';pr.classList.remove('neg');}
+  });
+}
+function requestSort(force){
+  if(!force&&!pendingSort) return;
+  var a=document.activeElement;
+  if(!force&&a&&slotsEl.contains(a)&&(a.tagName==='INPUT')) return;
+  pendingSort=false;
+  var spot=num(state.spot[state.mode].price);
+  var arr=cur().map(function(s,i){var r=calc(s,spot);return {s:s,i:i,p:r?r.ppo:Infinity};});
+  arr.sort(function(a,b){return a.p-b.p||a.i-b.i;});
+  var next=arr.map(function(x){return x.s;});
+  var changed=next.some(function(s,i){return s!==cur()[i];});
+  if(!changed) return;
+  state.slots[state.mode]=next; save();
+  next.forEach(function(s){slotsEl.appendChild(els[s.id]);});
+  update();
+}
+slotsEl.addEventListener('focusout',function(e){
+  var to=e.relatedTarget;
+  if(!to||!slotsEl.contains(to)) setTimeout(function(){requestSort(false);},0);
+});
+
+/* spot */
+function setChip(){
+  var chip=$('chip'), t=$('chipText'), sp=state.spot[state.mode];
+  var any=state.spot.gold.price||state.spot.silver.price;
+  var srcs=[state.spot.gold.src,state.spot.silver.src];
+  var cls='none', txt='Spot unavailable: enter manually';
+  var ts=Math.max(state.spot.gold.ts||0,state.spot.silver.ts||0);
+  if(srcs.indexOf('manual')>-1){cls='manual';txt='Manual spot';}
+  else if(srcs.indexOf('stale')>-1){cls='stale';txt='Stale: '+(ts?when(ts):'unknown');}
+  else if(srcs.indexOf('live')>-1){cls='';txt=when(ts)+' spot';}
+  else if(any){cls='stale';txt='Saved spot';}
+  chip.className='chip '+cls; t.textContent=txt;
+}
+function setSpotInputs(){
+  $('in-gold').value=state.spot.gold.price; $('in-silver').value=state.spot.silver.price;
+}
+function fetchOne(m){
+  var ctl=('AbortController' in window)?new AbortController():null;
+  var to=setTimeout(function(){if(ctl)ctl.abort();},9000);
+  return fetch(API[m],{cache:'no-store',signal:ctl?ctl.signal:undefined}).then(function(r){
+    if(!r.ok) throw new Error('http '+r.status); return r.json();
+  }).then(function(j){
+    var p=parseFloat(j&&(j.price!=null?j.price:j.Price));
+    if(!isFinite(p)||p<=0) throw new Error('bad price');
+    var ts=Date.parse(j.updatedAt||j.updated_at||'')||Date.now();
+    state.spot[m]={price:p.toFixed(2),ts:ts,src:'live'};
+  }).catch(function(){
+    var sp=state.spot[m];
+    if(sp.price) sp.src=(sp.src==='manual')?'manual':'stale'; else sp.src='none';
+  }).then(function(){clearTimeout(to);});
+}
+function refresh(){
+  var b=$('refresh'); if(b.classList.contains('busy')) return;
+  b.classList.add('busy');
+  Promise.all([fetchOne('gold'),fetchOne('silver')]).then(function(){
+    save();setSpotInputs();setChip();update();b.classList.remove('busy');
+  });
+}
+['gold','silver'].forEach(function(m){
+  var inp=$('in-'+m);
+  inp.addEventListener('input',function(){
+    state.spot[m].price=inp.value; state.spot[m].src=inp.value.trim()?'manual':'none';
+    save();setChip();update();
+  });
+  inp.addEventListener('change',function(){
+    inp.value=state.spot[m].price=clean(inp.value); save();update();
+  });
+  inp.addEventListener('focus',function(){setTimeout(function(){try{inp.select();}catch(e){}},0);});
+});
+
+/* controls */
+['gold','silver'].forEach(function(m){
+  $('tab-'+m).addEventListener('click',function(){state.mode=m;save();render();});
+});
+$('add').addEventListener('click',function(){
+  var a=cur(); if(a.length>=MAXS) return;
+  a.push(mkSlot('1oz')); save(); render();
+  var last=slotsEl.lastElementChild; if(last) last.scrollIntoView({block:'center',behavior:'smooth'});
+});
+$('reset').addEventListener('click',function(){
+  if(!confirm('Reset '+NAMES[state.mode]+'? This clears its prices and restores the default sizes. Spot is not changed.')) return;
+  state.slots[state.mode]=defaults(state.mode); save(); render();
+});
+$('refresh').addEventListener('click',refresh);
+
+load(); setSpotInputs(); setChip(); render(); refresh();
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+})();
+</script>
+</body>
+</html>
